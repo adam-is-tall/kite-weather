@@ -84,7 +84,7 @@ export default function LoginPage() {
               ? `Check your inbox`
               : sent
               ? "Resend magic link"
-              : "Send magic link"}
+              : "Continue"}
           </button>
         </form>
 
