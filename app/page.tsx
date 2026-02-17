@@ -176,14 +176,15 @@ export default function Page() {
 
         {settings && !isEditing ? (
           <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-            <h1 className="text-2xl font-bold mb-6">We're Watching the Wind!</h1>
+            <h1 className="text-2xl font-bold mb-6">Sit tight. We're watching the forecast.</h1>
+            <p className="text-gray-700 text-center">You'll get an email when conditions are right.</p>
 
             <p className="mb-1 text-gray-700">
-              Email: <span className="font-mono">{settings.email}</span>
+              Email:<br/><span className="font-mono">{settings.email}</span>
             </p>
 
             <p className="mb-1 text-gray-700">
-              Location: <span className="font-mono">{settings.location.label}</span>
+              Location:<br/><span className="font-mono">{settings.location.label}</span>
             </p>
 
             <div className="mb-4 flex items-center gap-3">
@@ -201,7 +202,7 @@ export default function Page() {
             <div className="mb-4 pt-3 border-t border-gray-200">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Your Alert Rules</p>
               <p className="text-sm text-gray-600">Wind: {KITE_RULES.minWindMph}–{KITE_RULES.maxWindMph} mph</p>
-              <p className="text-sm text-gray-600">Gusts: up to {KITE_RULES.maxGustMph} mph</p>
+              {/* <p className="text-sm text-gray-600">Gusts: up to {KITE_RULES.maxGustMph} mph</p> */}
               <p className="text-sm text-gray-600">Rain: {settings.noRain ? 'must be dry' : 'OK if raining'}</p>
             </div>
 
