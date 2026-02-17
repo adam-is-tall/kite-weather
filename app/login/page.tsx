@@ -66,7 +66,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center">Missing good kite weather?</h1>
 
         {sent ? (
-          <p className="text-gray-700 text-center">A login link is on its way</p>
+          <p className="text-gray-700 text-center">A sign in link is on the way to your email</p>
         ) : <p className="text-gray-700 text-center">Enter your email to sign in and get alerts when weather conditions are right!</p>}
 
         <form onSubmit={sendLink} className="space-y-3">
@@ -87,7 +87,7 @@ export default function LoginPage() {
             {cooldown > 0
               ? `Check your inbox`
               : sent
-              ? "Resend magic link"
+              ? "Resend link"
               : "Continue"}
           </button>
         </form>
