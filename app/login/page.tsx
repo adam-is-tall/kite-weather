@@ -59,11 +59,11 @@ export default function LoginPage() {
           <img src="/kite2.png" alt="Kite" className="w-40 h-auto" />
         </div>
 
-        <h1 className="text-2xl font-bold">Missing out on good kite weather?</h1>
+        <h1 className="text-2xl font-bold">Missing good kite weather?</h1>
 
         {sent ? (
           <p className="text-gray-700">A login link is on its way</p>
-        ) : <p className="text-gray-700">Enter your email and be alerted when conditions are right!</p>}
+        ) : <p className="text-gray-700">Enter your email and be alerted when weather conditions are right!</p>}
 
         <form onSubmit={sendLink} className="space-y-3">
           <label className="block text-sm font-medium text-gray-700">
