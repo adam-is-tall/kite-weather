@@ -1,15 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+
+const COOLDOWN_MS = 60_000;
+const LS_KEY = "kite_magic_link_sent_at";
+
+function secondsRemaining(): number {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return 0;
+  const elapsed = Date.now() - parseInt(raw, 10);
+  return Math.max(0, Math.ceil((COOLDOWN_MS - elapsed) / 1000));
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Restore cooldown if page is refreshed during the window
+  useEffect(() => {
+    const secs = secondsRemaining();
+    if (secs > 0) setCooldown(secs);
+  }, []);
+
+  // Tick down every second while cooldown is active
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
 
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
+    if (cooldown > 0) return;
     setError(null);
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -17,8 +42,13 @@ export default function LoginPage() {
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
 
-    if (error) setError(error.message);
-    else setSent(true);
+    if (error) {
+      setError(error.message);
+    } else {
+      localStorage.setItem(LS_KEY, String(Date.now()));
+      setSent(true);
+      setCooldown(Math.ceil(COOLDOWN_MS / 1000));
+    }
   }
 
   return (
@@ -28,23 +58,30 @@ export default function LoginPage() {
 
         {sent ? (
           <p className="text-gray-700">Check your email for a sign-in link.</p>
-        ) : (
-          <form onSubmit={sendLink} className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700">
-              Send magic link
-            </button>
-          </form>
-        )}
+        ) : null}
+
+        <form onSubmit={sendLink} className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <input
+            type="email"
+            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <button
+            disabled={cooldown > 0}
+            className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cooldown > 0
+              ? `Resend in ${cooldown}s`
+              : sent
+              ? "Resend magic link"
+              : "Send magic link"}
+          </button>
+        </form>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
