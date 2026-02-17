@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Settings as KiteSettings, Send } from 'lucide-react';
+import { Settings as KiteSettings } from 'lucide-react';
 import { LocationAutocomplete } from './LocationAutoComplete';
 import { fetchTomorrowForecast, evaluateKiteConditions, KITE_RULES } from './forecast';
 import type { SelectedLocation, Settings } from './types';
@@ -18,12 +18,6 @@ type KiteCheck =
   | { status: 'done'; shouldSend: boolean; message: string }
   | { status: 'error' };
 
-type AlertState =
-  | { status: 'idle' }
-  | { status: 'checking' }
-  | { status: 'sent';    message: string }
-  | { status: 'skipped'; message: string }
-  | { status: 'error';   message: string };
 
 export default function Page() {
   const router = useRouter();
@@ -71,7 +65,6 @@ export default function Page() {
   // ── UI state ─────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [kiteCheck, setKiteCheck] = useState<KiteCheck>({ status: 'loading' });
-  const [alertState, setAlertState] = useState<AlertState>({ status: 'idle' });
 
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -153,32 +146,6 @@ export default function Page() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleTestAlert = async () => {
-    if (!settings) return;
-    setAlertState({ status: 'checking' });
-    try {
-      const forecast = await fetchTomorrowForecast(settings.location.lat, settings.location.lon);
-      const { shouldSend, message } = evaluateKiteConditions(forecast, settings.noRain);
-
-      if (!shouldSend) {
-        setAlertState({ status: 'skipped', message });
-        return;
-      }
-
-      const res = await fetch('/api/alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: 'Kite Weather Alert — Great day tomorrow!',
-          html: `<p>${message}</p>`,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setAlertState({ status: 'sent', message });
-    } catch {
-      setAlertState({ status: 'error', message: 'Something went wrong. Try again.' });
-    }
-  };
 
   // ── Render guards ─────────────────────────────────────────────────────────
   if (!loaded) return null;
@@ -258,33 +225,11 @@ export default function Page() {
             </div>
 
             <button
-              onClick={handleTestAlert}
-              disabled={alertState.status === 'checking'}
-              className="w-full flex items-center justify-center gap-2 mb-1 bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-              {alertState.status === 'checking' ? 'Checking conditions…'
-                : alertState.status === 'sent'    ? 'Alert sent!'
-                : alertState.status === 'skipped' ? 'Check again'
-                : alertState.status === 'error'   ? 'Error — retry?'
-                : 'Test Alert Email'}
-            </button>
-            {'message' in alertState && (
-              <p className={`text-xs mb-3 ${
-                alertState.status === 'sent'      ? 'text-green-700'
-                : alertState.status === 'skipped' ? 'text-amber-700'
-                : 'text-red-600'
-              }`}>
-                {alertState.message}
-              </p>
-            )}
-
-            <button
               onClick={handleEdit}
               className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 font-semibold rounded px-4 py-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             >
               <KiteSettings className="w-4 h-4" />
-              Change Your Settings
+              Change Settings
             </button>
           </div>
         ) : (
@@ -318,7 +263,7 @@ export default function Page() {
                 onChange={(e) => setNoRain(e.target.checked)}
                 className="w-4 h-4 accent-blue-600"
               />
-              <span className="text-gray-700 font-medium">I don't want to fly a kite in the rain</span>
+              <span className="text-gray-700 font-medium">I want to stay dry</span>
             </label>
 
             <div>
