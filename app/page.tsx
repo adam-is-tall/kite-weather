@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Settings, Send } from 'lucide-react';
+import { Settings as KiteSettings, Send } from 'lucide-react';
 import { KiteSvg } from './KiteSvg';
 import { LocationAutocomplete } from './LocationAutoComplete';
-import { useSettings } from './useSettings';
 import { fetchTomorrowForecast, evaluateKiteConditions, KITE_RULES } from './forecast';
-import type { SelectedLocation } from './types';
+import type { SelectedLocation, Settings } from './types';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
+import { getSettings, upsertSettings } from '@/lib/settingsRepo';
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -25,7 +27,49 @@ type AlertState =
   | { status: 'error';   message: string };
 
 export default function Page() {
-  const { settings, save, mounted } = useSettings();
+  const router = useRouter();
+
+  // ── Auth + settings load ─────────────────────────────────────────────────
+  const [userId, setUserId] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  async function loadSettings(uid: string) {
+    try {
+      setLoadError(null);
+      const row = await getSettings(uid);
+      if (row) {
+        setSettings({
+          email: row.email,
+          location: { label: row.location_label, lat: row.lat, lon: row.lon },
+          noRain: row.no_rain,
+        });
+        setIsEditing(false);
+      } else {
+        setSettings(null);
+        setIsEditing(true); // new user — open the form
+      }
+    } catch {
+      setLoadError('Failed to load settings. Try refreshing.');
+    } finally {
+      setLoaded(true);
+    }
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace('/login');
+        return;
+      }
+      const uid = data.session.user.id;
+      setUserId(uid);
+      loadSettings(uid);
+    });
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── UI state ─────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [kiteCheck, setKiteCheck] = useState<KiteCheck>({ status: 'loading' });
   const [alertState, setAlertState] = useState<AlertState>({ status: 'idle' });
@@ -35,14 +79,10 @@ export default function Page() {
   const [location, setLocation] = useState<SelectedLocation | null>(null);
   const [noRain, setNoRain] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleCopyLatLon = () => {
-    if (!settings) return;
-    navigator.clipboard.writeText(`${settings.location.lat},${settings.location.lon}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+  // ── Forecast check whenever settings change ──────────────────────────────
   useEffect(() => {
     if (!settings) return;
     setKiteCheck({ status: 'loading' });
@@ -54,6 +94,7 @@ export default function Page() {
       .catch(() => setKiteCheck({ status: 'error' }));
   }, [settings]);
 
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const isEmailValid = validateEmail(email);
   const isFormValid = isEmailValid && !!location;
 
@@ -63,6 +104,7 @@ export default function Page() {
     setLocation(settings.location);
     setNoRain(settings.noRain);
     setEmailError(null);
+    setSaveError(null);
     setIsEditing(true);
   };
 
@@ -75,13 +117,41 @@ export default function Page() {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isFormValid) {
       if (!isEmailValid) setEmailError('Please enter a valid email address.');
       return;
     }
-    save({ email, location: location!, noRain });
-    setIsEditing(false);
+    if (!location) return;
+
+    try {
+      setSaving(true);
+      setSaveError(null);
+
+      await upsertSettings({
+        user_id: userId,
+        email,
+        location_label: location.label,
+        lat: location.lat,
+        lon: location.lon,
+        no_rain: noRain,
+      });
+
+      setSettings({ email, location, noRain });
+      setIsEditing(false);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to save settings.';
+      setSaveError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopyLatLon = () => {
+    if (!settings) return;
+    navigator.clipboard.writeText(`${settings.location.lat},${settings.location.lon}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleTestAlert = async () => {
@@ -111,8 +181,24 @@ export default function Page() {
     }
   };
 
-  if (!mounted) return null;
+  // ── Render guards ─────────────────────────────────────────────────────────
+  if (!loaded) return null;
 
+  if (loadError) return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center">
+        <p className="text-red-600 mb-3">{loadError}</p>
+        <button
+          onClick={() => { setLoaded(false); loadSettings(userId); }}
+          className="text-blue-600 underline text-sm"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Main UI ───────────────────────────────────────────────────────────────
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-md border border-gray-200">
@@ -197,7 +283,7 @@ export default function Page() {
               onClick={handleEdit}
               className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 font-semibold rounded px-4 py-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             >
-              <Settings className="w-4 h-4" />
+              <KiteSettings className="w-4 h-4" />
               Change Your Settings
             </button>
           </div>
@@ -235,15 +321,32 @@ export default function Page() {
               <span className="text-gray-700 font-medium">Only alert me if no rain is expected</span>
             </label>
 
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 mt-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-            >
-              Set up Alerts
-            </button>
+            <div>
+              <button
+                type="submit"
+                disabled={!isFormValid || saving}
+                className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 mt-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : 'Set up Alerts'}
+              </button>
+              {saveError && (
+                <p className="text-red-600 text-sm mt-2">{saveError}</p>
+              )}
+            </div>
           </form>
         )}
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.replace('/login');
+            }}
+            className="text-sm text-gray-500 underline"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   );
