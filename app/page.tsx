@@ -263,7 +263,7 @@ export default function Page() {
                 onChange={(e) => setNoRain(e.target.checked)}
                 className="w-4 h-4 accent-blue-600"
               />
-              <span className="text-gray-700 font-medium">I want to stay dry</span>
+              <span className="text-gray-700 font-medium">Keep me dry</span>
             </label>
 
             <div>
