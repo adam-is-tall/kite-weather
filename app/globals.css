@@ -10,6 +10,24 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-lora: var(--font-lora);
+
+  /*
+   * Custom blue palette — hue 242° derived from lab(72.39 -14.3 -45.94)
+   * ≈ oklch(76.4% 0.144 242°). That exact color sits at blue-400.
+   * blue-600 is darkened to oklch(53%) ≈ 5.3:1 contrast with white (AA ✓).
+   */
+  --color-blue-50:  oklch(97.5% 0.013 242);
+  --color-blue-100: oklch(94.8% 0.028 242);
+  --color-blue-200: oklch(90.2% 0.056 242);
+  --color-blue-300: oklch(84.5% 0.093 242);
+  --color-blue-400: oklch(76.4% 0.144 242); /* ≈ your lab() color */
+  --color-blue-500: oklch(65.0% 0.170 242);
+  --color-blue-600: oklch(53.0% 0.175 242); /* 5.3:1 with white ✓ AA */
+  --color-blue-700: oklch(43.5% 0.160 242);
+  --color-blue-800: oklch(35.0% 0.130 242);
+  --color-blue-900: oklch(27.0% 0.090 242);
+  --color-blue-950: oklch(19.5% 0.060 242);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +41,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-lora), Georgia, serif;
 }

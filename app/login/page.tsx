@@ -43,7 +43,11 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(
+        error.message.toLowerCase().includes('rate limit')
+          ? 'Sorry, lots of people are signing up. Please try again in 6 or 7 minutes.'
+          : error.message
+      );
     } else {
       localStorage.setItem(LS_KEY, String(Date.now()));
       setSent(true);
