@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Settings as KiteSettings, Send } from 'lucide-react';
-import { KiteSvg } from './KiteSvg';
 import { LocationAutocomplete } from './LocationAutoComplete';
 import { fetchTomorrowForecast, evaluateKiteConditions, KITE_RULES } from './forecast';
 import type { SelectedLocation, Settings } from './types';
@@ -204,7 +203,8 @@ export default function Page() {
       <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-md border border-gray-200">
 
         <div className="flex justify-center mb-4">
-          <KiteSvg className="w-28 h-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/kite-1.png" alt="Kite" className="w-40 h-auto" />
         </div>
 
         {settings && !isEditing ? (

@@ -54,11 +54,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl shadow p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Never Miss a Kite Day</h1>
+        <div className="flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/kite2.png" alt="Kite" className="w-40 h-auto" />
+        </div>
+
+        <h1 className="text-2xl font-bold">Missing Good Kite Days?</h1>
 
         {sent ? (
           <p className="text-gray-700">A login link is on its way</p>
-        ) : <p className="text-gray-700">Enter your email and we'll send you a link to sign-in</p>}
+        ) : <p className="text-gray-700">Enter your email and be alerted when the weather is right!</p>}
 
         <form onSubmit={sendLink} className="space-y-3">
           <label className="block text-sm font-medium text-gray-700">
