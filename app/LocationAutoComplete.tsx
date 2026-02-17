@@ -5,36 +5,37 @@ import type { SelectedLocation } from './types'
 
 export type { SelectedLocation }
 
-type PhotonFeature = {
-  properties: {
-    name?: string
+type NominatimResult = {
+  lat: string
+  lon: string
+  display_name: string
+  address?: {
     city?: string
+    town?: string
+    village?: string
+    suburb?: string
     state?: string
-    country?: string
     postcode?: string
-  }
-  geometry: {
-    coordinates: [number, number] // [lon, lat]
+    country?: string
+    country_code?: string
   }
 }
 
-function buildLabel(f: PhotonFeature) {
-  const p = f.properties
-  const parts = [
-    p.name,
-    p.city,
-    p.state,
-    p.postcode,
-    p.country,
-  ].filter(Boolean)
-  // Avoid duplicates when name/city overlap
-  return Array.from(new Set(parts)).join(', ')
+function buildLabel(r: NominatimResult): string {
+  const a = r.address ?? {}
+  const city = a.city ?? a.town ?? a.village ?? a.suburb
+  const parts = [city, a.state, a.postcode].filter(Boolean)
+  if (parts.length >= 2) return parts.join(', ')
+  // fallback: first 3 comma-parts of display_name
+  return r.display_name.split(',').slice(0, 3).join(',').trim()
 }
+
+const ZIP_RE = /^\d{5}(-\d{4})?$/
 
 export function LocationAutocomplete({
   value,
   onSelect,
-  placeholder = 'Search a city, address, or postal code…',
+  placeholder = 'City, address, or zip code…',
 }: {
   value: SelectedLocation | null
   onSelect: (loc: SelectedLocation) => void
@@ -46,7 +47,7 @@ export function LocationAutocomplete({
   const [results, setResults] = useState<SelectedLocation[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
-  // Keep input text in sync when parent value changes (e.g., on select)
+  // Keep input text in sync when parent value changes
   useEffect(() => {
     if (value?.label) setQuery(value.label)
   }, [value?.label])
@@ -69,22 +70,35 @@ export function LocationAutocomplete({
         const ac = new AbortController()
         abortRef.current = ac
 
-        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6`
-        const res = await fetch(url, { signal: ac.signal })
-        const data = await res.json()
-
-        const locs: SelectedLocation[] = (data?.features ?? []).map((f: PhotonFeature) => {
-          const [lon, lat] = f.geometry.coordinates
-          return { label: buildLabel(f), lat, lon }
+        const params = new URLSearchParams({
+          q,
+          format: 'json',
+          limit: '6',
+          addressdetails: '1',
         })
+        // Bias toward US results when input looks like a zip code
+        if (ZIP_RE.test(q)) params.set('countrycodes', 'us')
 
-        setResults(locs.filter(l => l.label))
-      } catch (e) {
+        const url = `https://nominatim.openstreetmap.org/search?${params}`
+        const res = await fetch(url, {
+          signal: ac.signal,
+          headers: { 'Accept-Language': 'en' },
+        })
+        const data: NominatimResult[] = await res.json()
+
+        const locs: SelectedLocation[] = data.map((r) => ({
+          label: buildLabel(r),
+          lat: parseFloat(r.lat),
+          lon: parseFloat(r.lon),
+        }))
+
+        setResults(locs.filter((l) => l.label))
+      } catch {
         // ignore abort errors
       } finally {
         setLoading(false)
       }
-    }, 300)
+    }, 350)
 
     return () => clearTimeout(t)
   }, [query, value?.label])
@@ -104,7 +118,6 @@ export function LocationAutocomplete({
         }}
         onFocus={() => { if (!value || query !== value.label) setOpen(true) }}
         onBlur={() => {
-          // small delay so click can register
           setTimeout(() => setOpen(false), 120)
         }}
         placeholder={placeholder}
@@ -124,7 +137,7 @@ export function LocationAutocomplete({
                   <button
                     type="button"
                     className="w-full text-left px-3 py-2 hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
-                    onMouseDown={(e) => e.preventDefault()} // prevent blur before click
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       onSelect(r)
                       setQuery(r.label)
