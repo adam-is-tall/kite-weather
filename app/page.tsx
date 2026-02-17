@@ -209,7 +209,7 @@ export default function Page() {
 
         {settings && !isEditing ? (
           <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-            <h1 className="text-2xl font-bold mb-6">Be on the lookout for kite weather updates.</h1>
+            <h1 className="text-2xl font-bold mb-6">We're Watching the Wind!</h1>
 
             <p className="mb-1 text-gray-700">
               Email: <span className="font-mono">{settings.email}</span>
@@ -232,7 +232,7 @@ export default function Page() {
             </div>
 
             <div className="mb-4 pt-3 border-t border-gray-200">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Alert Rules</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Your Alert Rules</p>
               <p className="text-sm text-gray-600">Wind: {KITE_RULES.minWindMph}–{KITE_RULES.maxWindMph} mph</p>
               <p className="text-sm text-gray-600">Gusts: up to {KITE_RULES.maxGustMph} mph</p>
               <p className="text-sm text-gray-600">Rain: {settings.noRain ? 'must be dry' : 'OK if raining'}</p>
@@ -289,7 +289,7 @@ export default function Page() {
           </div>
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
-            <h1 className="text-2xl font-bold mb-6">Ready to fly a kite? We'll let you know when it's windy enough.</h1>
+            <h1 className="text-2xl font-bold mb-6">Set Up Kite Day Alerts</h1>
 
             <div>
               <label className="block mb-2 font-medium text-gray-700">
@@ -318,7 +318,7 @@ export default function Page() {
                 onChange={(e) => setNoRain(e.target.checked)}
                 className="w-4 h-4 accent-blue-600"
               />
-              <span className="text-gray-700 font-medium">Only alert me if no rain is expected</span>
+              <span className="text-gray-700 font-medium">I don't want to fly a kite in the rain</span>
             </label>
 
             <div>
@@ -327,7 +327,7 @@ export default function Page() {
                 disabled={!isFormValid || saving}
                 className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 mt-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Set up Alerts'}
+                {saving ? 'Saving…' : 'Get Alerts'}
               </button>
               {saveError && (
                 <p className="text-red-600 text-sm mt-2">{saveError}</p>

@@ -54,11 +54,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl shadow p-6 space-y-4">
-        <h1 className="text-xl font-bold">Sign in</h1>
+        <h1 className="text-2xl font-bold">Never Miss a Kite Day</h1>
 
         {sent ? (
-          <p className="text-gray-700">Check your email for a sign-in link.</p>
-        ) : null}
+          <p className="text-gray-700">A login link is on its way</p>
+        ) : <p className="text-gray-700">Enter your email and we'll send you a link to sign-in</p>}
 
         <form onSubmit={sendLink} className="space-y-3">
           <label className="block text-sm font-medium text-gray-700">
@@ -76,7 +76,7 @@ export default function LoginPage() {
             className="w-full bg-blue-600 text-white font-semibold rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cooldown > 0
-              ? `Resend in ${cooldown}s`
+              ? `Check your inbox`
               : sent
               ? "Resend magic link"
               : "Send magic link"}
